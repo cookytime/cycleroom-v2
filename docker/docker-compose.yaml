@@ -60,7 +60,7 @@ services:
       - "5900:5900"  # VNC port
 
   influxdb:
-    image: influxdb:2.0
+    image: influxdb:2.7
     container_name: influxdb
     ports:
       - "8086:8086"
