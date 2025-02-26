@@ -1,0 +1,11 @@
+
+fastapi
+uvicorn
+httpx
+pydantic
+influxdb-client
+asyncpg
+pytest
+flake8
+black
+load_dotenv

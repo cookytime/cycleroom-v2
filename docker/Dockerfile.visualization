@@ -1,0 +1,24 @@
+
+# Use a more compatible Python base image
+FROM ubuntu:20.04
+
+# Set non-interactive frontend for timezone configuration
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set the working directory
+WORKDIR /app
+
+# Install dependencies for OpenCV, Pygame, Xvfb, and VNC
+RUN apt-get update && apt-get install -y     xvfb     x11-xserver-utils     xfonts-base     xfonts-75dpi     xfonts-100dpi     tigervnc-standalone-server     libsdl2-dev     libsdl2-image-dev     libsdl2-mixer-dev     libsdl2-ttf-dev     libportmidi-dev     libswscale-dev     libavformat-dev     libavcodec-dev     python3-dev     tzdata     && ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime &&     dpkg-reconfigure -f noninteractive tzdata &&     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy the application code
+COPY ./src/cycleroom /app
+
+# Install Python dependencies
+RUN apt-get update && apt-get install -y python3-pip &&     pip install --no-cache-dir --upgrade pip &&     pip install --no-cache-dir opencv-python-headless pygame httpx
+
+# Expose VNC port
+EXPOSE 5900
+
+# Run the race visualization with Xvfb and VNC
+CMD Xvfb :99 -screen 0 1024x768x24 -ac +extension GLX +render -noreset -verbose 5 > /var/log/Xvfb.log 2>&1 &&     export DISPLAY=:99 &&     python race/race.py

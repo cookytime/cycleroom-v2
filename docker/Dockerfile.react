@@ -1,0 +1,26 @@
+# Use Node.js base image for React app
+FROM node:18
+
+# Set working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY ./src/cycleroom/bike_selection/package.json /app/
+
+# Install dependencies using npm ci for consistent builds
+RUN npm install
+
+# Copy the rest of the application code
+COPY ./src/cycleroom/bike_selection /app
+
+# Install serve globally for production build
+RUN npm install -g serve
+
+# Build the React app
+RUN npm run build
+
+# Expose port for the React app
+EXPOSE 3000
+
+# Start the React app using serve
+CMD ["serve", "-s", "build"]

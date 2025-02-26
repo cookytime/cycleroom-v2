@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  fastapi-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.fastapi
+    container_name: fastapi-app
+    ports:
+      - "8000:8000"
+    networks:
+      - cycleroom-network
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - TIMESCALEDB_HOST=timescaledb
+      - QUERY_INTERVAL=2
+
+  ble-scanner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.ble_scanner
+    container_name: ble-scanner
+    privileged: true
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+    environment:
+      - TARGET_PREFIX=M3
+      - FASTAPI_URL=http://fastapi-app:8000/api/bikes
+    depends_on:
+      - fastapi-app
+    networks:
+      - cycleroom-network
+
+  bike-selection:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.react
+    container_name: bike-selection
+    ports:
+      - "3000:3000"
+    depends_on:
+      - fastapi-app
+    networks:
+      - cycleroom-network
+
+  race-visualization:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.visualization
+    container_name: race-visualization
+    depends_on:
+      - fastapi-app
+    networks:
+      - cycleroom-network
+    environment:
+      - FASTAPI_URL=http://fastapi-app:8000/api/bikes
+    ports:
+      - "5900:5900"  # VNC port
+
+  influxdb:
+    image: influxdb:2.0
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    networks:
+      - cycleroom-network
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg17
+    container_name: timescaledb
+    ports:
+      - "5432:5432"
+    networks:
+      - cycleroom-network
+    environment:
+      - POSTGRES_USER=timescale_user
+      - POSTGRES_PASSWORD=timescale_password
+      - POSTGRES_DB=timescale_db
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+
+networks:
+  cycleroom-network:
+    driver: bridge
+
+volumes:
+  timescale-data:
