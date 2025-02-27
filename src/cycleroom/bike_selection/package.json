@@ -8,8 +8,8 @@
     "react-dom": "^18.0.0",
     "react-scripts": "latest",
     "react-router-dom": "^6.3.0",
-    "react-konva": "^7.2.5",
-    "konva": "^7.2.5",
+    "react-konva": "19.0.3",
+    "konva": "19.0.3",
     "tailwindcss": "^3.0.0",
     "postcss": "^8.4.6",
     "autoprefixer": "^10.4.2"
