@@ -1,6 +1,7 @@
 import struct
 from datetime import datetime, timezone
 
+
 class KeiserM3BLEBroadcast:
     def __init__(self, manufacture_data: bytes):
         """Parses Keiser M3 BLE advertisement data into structured format."""
@@ -76,7 +77,9 @@ class KeiserM3BLEBroadcast:
 
         # ✅ Convert tripDistance to miles/km
         if temp_distance is not None:
-            if temp_distance & 32768 != 0:  # MSB is 1 → Distance in KM, convert to Miles
+            if (
+                temp_distance & 32768 != 0
+            ):  # MSB is 1 → Distance in KM, convert to Miles
                 self.trip_distance = ((temp_distance & 32767) * 0.62137119) / 10.0
             else:
                 self.trip_distance = temp_distance / 10.0  # Already in miles
