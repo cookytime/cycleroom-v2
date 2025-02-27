@@ -1,9 +1,7 @@
 import json
 import requests
 import time
-from cycleroom.backend.keiser_m3_ble_parser import (
-    KeiserM3BLEBroadcast,
-)  # ✅ Import the new parser
+from cycleroom.backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast  # ✅ Import the new parser
 
 # Load JSON data from file
 json_file = "filtered_output.json"
