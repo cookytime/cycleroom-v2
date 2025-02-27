@@ -36,6 +36,8 @@ waypoints_json_path = "race/waypoints.json"
 try:
     with open(waypoints_json_path, "w") as f:
         json.dump(waypoints, f)
-    print(f"✅ Extracted {len(waypoints)} centerline waypoints and saved to {waypoints_json_path}")
+    print(
+        f"✅ Extracted {len(waypoints)} centerline waypoints and saved to {waypoints_json_path}"
+    )
 except Exception as e:
     print(f"❌ Failed to save waypoints to {waypoints_json_path}: {e}")

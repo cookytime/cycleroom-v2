@@ -27,7 +27,9 @@ for entry in json_data:
     entry_time_ns = entry.get("time")
     if entry_time_ns:
         try:
-            entry_time = datetime.utcfromtimestamp(int(entry_time_ns) / 1e9)  # Convert nanoseconds to seconds
+            entry_time = datetime.utcfromtimestamp(
+                int(entry_time_ns) / 1e9
+            )  # Convert nanoseconds to seconds
             valid_times.append(entry_time)
             if entry.get("sensor") != "Bluetooth" or entry.get("id") in m3_device_ids:
                 filtered_json_data.append(entry)

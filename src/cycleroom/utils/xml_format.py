@@ -1,6 +1,7 @@
 import xml.dom.minidom
 import argparse
 
+
 def pretty_print_xml(xml_file):
     """Reads an XML file and outputs a formatted, easy-to-read version."""
     try:
@@ -16,6 +17,7 @@ def pretty_print_xml(xml_file):
 
     except Exception as e:
         print(f"❌ Error: {e}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Format and pretty-print an XML file.")

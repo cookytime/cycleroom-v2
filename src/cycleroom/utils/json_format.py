@@ -1,6 +1,7 @@
 import json
 import argparse
 
+
 def pretty_print_json(json_file):
     """Reads a JSON file and outputs a formatted, easy-to-read version."""
     try:
@@ -15,6 +16,7 @@ def pretty_print_json(json_file):
 
     except Exception as e:
         logger.info(f"❌ Error: {e}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Format and pretty-print a JSON file.")

@@ -40,13 +40,13 @@ running = True
 while running:
     screen.fill((0, 0, 0))
     screen.blit(TRACK_IMAGE, (0, 0))
-    
+
     # Draw waypoints
     for i, point in enumerate(WAYPOINTS):
         pygame.draw.circle(screen, (255, 0, 0), point, 5)
-    
+
     pygame.display.flip()
-    
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -77,6 +77,7 @@ except Exception as e:
 
 pygame.quit()
 
+
 # Function to draw waypoints
 def draw_waypoint_connections():
     try:
@@ -89,7 +90,7 @@ def draw_waypoint_connections():
         return
 
     image = track_image.copy()
-    
+
     # Draw lines between waypoints
     for i in range(len(WAYPOINTS) - 1):
         cv2.line(image, WAYPOINTS[i], WAYPOINTS[i + 1], (0, 255, 0), 2)
@@ -98,18 +99,18 @@ def draw_waypoint_connections():
         cv2.line(image, WAYPOINTS[-1], WAYPOINTS[0], (0, 255, 0), 2)  # Close the loop
 
     output_path = "waypoints_connected.jpg"
-    
+
     try:
         cv2.imwrite(output_path, image)
         print(f"📷 Saved connected waypoints image at {output_path}")
-        
+
         # Show the image
         cv2.imshow("Waypoint Connections", image)
 
         # **Wait for 'Q' key to close**
         while True:
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
+            if key == ord("q"):
                 break
 
         cv2.destroyAllWindows()
@@ -119,6 +120,7 @@ def draw_waypoint_connections():
     finally:
         cv2.destroyAllWindows()
         sys.exit(0)  # Exit the script properly
+
 
 # Call function **AFTER** Pygame loop ends
 draw_waypoint_connections()
