@@ -2,8 +2,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import json
-from cycleroom.backend.ble_listener import scan_keiser_bikes
-from cycleroom.backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast
+from src.cycleroom.backend.ble_listener import scan_keiser_bikes
+from src.cycleroom.backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast
 
 class TestScanKeiserBikes(unittest.TestCase):
     @patch('cycleroom.backend.ble_listener.BleakScanner')

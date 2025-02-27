@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import json
-from cycleroom.backend.ble_scanner import send_parsed_data  # Hypothetical function for sending data
+from src.cycleroom.backend.ble_scanner import send_parsed_data  # Hypothetical function for sending data
 
 class TestSendParsedData(unittest.TestCase):
     @patch('cycleroom.backend.ble_scanner.httpx.post')

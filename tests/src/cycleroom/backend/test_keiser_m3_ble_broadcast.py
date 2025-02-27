@@ -1,6 +1,6 @@
 
 import unittest
-from cycleroom.backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast
+from src.cycleroom.backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast
 import json
 
 class TestKeiserM3BLEBroadcast(unittest.TestCase):
