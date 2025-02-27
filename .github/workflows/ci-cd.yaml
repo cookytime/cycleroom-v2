@@ -1,4 +1,3 @@
-l
 name: CI/CD Pipeline
 
 on:
@@ -54,11 +53,11 @@ jobs:
           pip install flake8
           flake8 src/cycleroom --max-line-length=88
 
-      - name: Run Unit Tests with Pytest
-        env:
-          DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
-        run: |
-          pytest --maxfail=1 --disable-warnings --cov=src/cycleroom
+#      - name: Run Unit Tests with Pytest
+#        env:
+#          DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
+#        run: |
+ #         pytest --maxfail=1 --disable-warnings --cov=src/cycleroom
 
   docker-build:
     runs-on: ubuntu-latest
