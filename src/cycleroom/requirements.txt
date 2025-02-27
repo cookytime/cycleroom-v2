@@ -1,6 +1,6 @@
 asyncpg==0.30.0
 bleak==0.22.3
-fastapi==0.115.8
+fastapi==0.115.9
 httpx==0.28.1
 influxdb_client==1.48.0
 numpy==2.2.3
