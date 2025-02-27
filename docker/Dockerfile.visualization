@@ -1,6 +1,6 @@
 
 # Use a more compatible Python base image
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 # Set non-interactive frontend for timezone configuration
 ENV DEBIAN_FRONTEND=noninteractive
