@@ -3,9 +3,12 @@ import logging
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from bleak import BleakScanner
-from cycleroom.backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast
+from backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast
 
 TARGET_PREFIX = "M3"
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 async def scan_keiser_bikes(scan_duration=10):

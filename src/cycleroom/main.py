@@ -5,17 +5,34 @@ Starts the FastAPI server from server.py.
 
 import uvicorn
 import multiprocessing
-from dotenv import load_dotenv
-import backend.ble_listener
 import os
+import logging
+from config.config import Config
 
-# Load environment variables
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../config/.env"))
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Debug: Print InfluxDB variables
 influx_vars = ["INFLUXDB_URL", "INFLUXDB_TOKEN", "INFLUXDB_ORG", "INFLUXDB_BUCKET"]
 for var in influx_vars:
-    logger.info(f"{var}: {os.environ.get(var, 'Not Set')}")
+    logger.info(f"{var}: {getattr(Config, var, 'Not Set')}")
+
+
+def set_env_variables():
+    """Set environment variables from Config class."""
+    os.environ["INFLUXDB_URL"] = Config.INFLUXDB_URL
+    os.environ["INFLUXDB_TOKEN"] = Config.INFLUXDB_TOKEN
+    os.environ["INFLUXDB_ORG"] = Config.INFLUXDB_ORG
+    os.environ["INFLUXDB_BUCKET"] = Config.INFLUXDB_BUCKET
+    os.environ["QUERY_INTERVAL"] = str(Config.QUERY_INTERVAL)
+    os.environ["SCREEN_WIDTH"] = str(Config.SCREEN_WIDTH)
+    os.environ["SCREEN_HEIGHT"] = str(Config.SCREEN_HEIGHT)
+    os.environ["TRACK_WIDTH"] = str(Config.TRACK_WIDTH)
+    os.environ["TRACK_LENGTH_MILES"] = str(Config.TRACK_LENGTH_MILES)
+    os.environ["WAYPOINTS_FILE"] = Config.WAYPOINTS_FILE
+    os.environ["BIKE_ICON_PATH"] = Config.BIKE_ICON_PATH
+    os.environ["TRACK_IMAGE_PATH"] = Config.TRACK_IMAGE_PATH
 
 
 def start_server():
@@ -37,14 +54,16 @@ def start_blescanner():
 
 
 if __name__ == "__main__":
+    set_env_variables()
+
     server_process = multiprocessing.Process(target=start_server)
-    race_process = multiprocessing.Process(target=start_race)
+    # race_process = multiprocessing.Process(target=start_race)
     blescanner_process = multiprocessing.Process(target=start_blescanner)
 
     server_process.start()
-    race_process.start()
+    # race_process.start()
     blescanner_process.start()
 
     server_process.join()
-    race_process.join()
+    # race_process.join()
     blescanner_process.join()
