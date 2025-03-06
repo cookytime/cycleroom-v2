@@ -8,6 +8,10 @@ import multiprocessing
 import os
 import logging
 from config.config import Config
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logger
 logging.basicConfig(level=logging.INFO)
@@ -64,6 +68,12 @@ if __name__ == "__main__":
     # race_process.start()
     blescanner_process.start()
 
-    server_process.join()
-    # race_process.join()
-    blescanner_process.join()
+    try:
+        server_process.join()
+        # race_process.join()
+        blescanner_process.join()
+    except KeyboardInterrupt:
+        logger.info("Shutting down processes...")
+        server_process.terminate()
+        # race_process.terminate()
+        blescanner_process.terminate()
