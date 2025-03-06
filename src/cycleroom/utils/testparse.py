@@ -4,6 +4,8 @@ import requests
 import json
 import logging
 import argparse
+import time
+from datetime import datetime
 
 # Configure logger
 logging.basicConfig(level=logging.INFO)
@@ -109,20 +111,16 @@ def hex_string_to_byte_array(hex_string):
 def send_parsed_data_to_api(parsed_data, server_url):
     """Send parsed data to the API"""
     data = {
-        "UUID": parsed_data.UUID,
-        "RSSI": parsed_data.RSSI,
-        "BuildMajor": parsed_data.BuildMajor,
-        "BuildMinor": parsed_data.BuildMinor,
-        "Interval": parsed_data.Interval,
-        "ID": parsed_data.ID,
-        "Cadence": parsed_data.Cadence,
-        "HeartRate": parsed_data.HeartRate,
-        "Power": parsed_data.Power,
-        "Energy": parsed_data.Energy,
-        "Time": parsed_data.Time,
-        "Trip": parsed_data.Trip,
-        "Gear": parsed_data.Gear,
-        "IsValid": parsed_data.IsValid,
+        "equipment_id": parsed_data.UUID,
+        "timestamp": datetime.utcnow().isoformat(),  # Add a timestamp
+        "power": parsed_data.Power,
+        "cadence": parsed_data.Cadence,
+        "heart_rate": parsed_data.HeartRate,
+        "gear": parsed_data.Gear,
+        "caloric_burn": parsed_data.Energy,  # Assuming Energy is caloric_burn
+        "duration_minutes": parsed_data.Time // 60,
+        "duration_seconds": parsed_data.Time % 60,
+        "distance": parsed_data.Trip,
     }
 
     response = requests.post(server_url, json=data)
@@ -138,10 +136,13 @@ def process_csv_file(csv_file, server_url):
         reader = csv.reader(file)
         header = next(reader)  # Skip header row
 
+        start_time = time.time()
+
         for row in reader:
             address = row[3].strip()
             manufacturer_data = row[4].strip()
             rssi = int(row[2].strip())
+            seconds_elapsed = float(row[1].strip())
 
             # Validate manufacturer data
             if not all(c in "0123456789abcdefABCDEF" for c in manufacturer_data):
@@ -157,6 +158,12 @@ def process_csv_file(csv_file, server_url):
             print(
                 f"Parsed Data -> UUID: {parsed_data.UUID}, Power: {parsed_data.Power}, Cadence: {parsed_data.Cadence}, Valid: {parsed_data.IsValid}"
             )
+
+            # Calculate delay based on seconds_elapsed
+            current_time = time.time()
+            delay = max(0, start_time + seconds_elapsed - current_time)
+            logger.info(f"Waiting for {delay:.2f} seconds before sending data...")
+            time.sleep(delay)
 
             # Send parsed data to the API
             send_parsed_data_to_api(parsed_data, server_url)
