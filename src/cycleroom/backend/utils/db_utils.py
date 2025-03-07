@@ -42,13 +42,13 @@ async def get_timescale_connection():
 
 
 # Save Bike Number and Device Address Mapping
-async def save_bike_mapping(bike_number: str, device_address: str) -> bool: 
+async def save_bike_mapping(bike_number: str, device_address: str) -> bool:
     try:
         conn = await get_timescale_connection()
         query = """
             INSERT INTO bike_mappings (bike_number, device_address, mapped_at)NTO bike_mappings (bike_number, device_address, mapped_at)
             VALUES ($1, $2, NOW())            VALUES ($1, $2, NOW())
-        """ 
+        """
         await conn.execute(query, bike_number, device_address)
         await conn.close()
         logger.info(

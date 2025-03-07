@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 
 # Set PYTHONPATH programmatically
 import sys
-sys.path.append('/home/glen/cycleroom-v2/src')
+
+sys.path.append("/home/glen/cycleroom-v2/src")
 
 # Load environment variables from .env file
 dotenv_path = os.path.join(os.path.dirname(__file__), "../config/.env")
@@ -19,7 +20,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 try:
-    from backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast  # ✅ Import the new parser
+    from backend.keiser_m3_ble_parser import (
+        KeiserM3BLEBroadcast,
+    )  # ✅ Import the new parser
+
     logger.info("Successfully imported KeiserM3BLEBroadcast.")
 except ImportError as e:
     logger.error(f"Error importing KeiserM3BLEBroadcast: {e}")
@@ -65,7 +69,9 @@ for index, record in enumerate(bluetooth_records):
 
     # Skip invalid hex format
     if not all(c in "0123456789abcdefABCDEF" for c in manufacturer_data_hex):
-        logger.error(f"❌ Skipping device {bluetooth_mac} - Invalid manufacturer data format: {manufacturer_data_hex}")
+        logger.error(
+            f"❌ Skipping device {bluetooth_mac} - Invalid manufacturer data format: {manufacturer_data_hex}"
+        )
         continue
 
     try:
@@ -86,7 +92,9 @@ for index, record in enumerate(bluetooth_records):
             current_time = time.time()
             delay = max(0, start_time + elapsed_time - current_time)
 
-            logger.info(f"⏳ Waiting {delay:.2f} sec before sending data for Equipment {equipment_id}...")
+            logger.info(
+                f"⏳ Waiting {delay:.2f} sec before sending data for Equipment {equipment_id}..."
+            )
             time.sleep(delay)  # Wait to match `seconds_elapsed`
 
             # Send parsed data to the server
@@ -95,8 +103,12 @@ for index, record in enumerate(bluetooth_records):
             if response.status_code == 200:
                 logger.info(f"✅ Successfully sent data for Equipment {equipment_id}")
             else:
-                logger.error(f"❌ Failed to send data for {equipment_id}: {response.text}")
+                logger.error(
+                    f"❌ Failed to send data for {equipment_id}: {response.text}"
+                )
 
     except Exception as e:
-        logger.error(f"🔥 BLE Parsing Error for device {bluetooth_mac} - Data: {manufacturer_data_hex}")
+        logger.error(
+            f"🔥 BLE Parsing Error for device {bluetooth_mac} - Data: {manufacturer_data_hex}"
+        )
         logger.error(f"   Exception: {e}")

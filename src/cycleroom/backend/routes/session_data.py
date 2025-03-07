@@ -22,15 +22,29 @@ INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET")
 client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)
 write_api = client.write_api()
 
+
 @router.post("/sessions")
 async def create_session(data: Dict[str, Any]):
-    required_keys = ["equipment_id", "timestamp", "power", "gear", "distance", "cadence", "heart_rate", "caloric_burn", "duration_minutes", "duration_seconds"]
+    required_keys = [
+        "equipment_id",
+        "timestamp",
+        "power",
+        "gear",
+        "distance",
+        "cadence",
+        "heart_rate",
+        "caloric_burn",
+        "duration_minutes",
+        "duration_seconds",
+    ]
     if not all(key in data for key in required_keys):
         raise HTTPException(status_code=400, detail="Missing required fields")
 
     try:
         # ✅ Convert timestamp from JSON input
-        timestamp = datetime.fromisoformat(data["timestamp"]).replace(tzinfo=timezone.utc)
+        timestamp = datetime.fromisoformat(data["timestamp"]).replace(
+            tzinfo=timezone.utc
+        )
 
         # ✅ Create InfluxDB data point
         point = (
@@ -59,6 +73,7 @@ async def create_session(data: Dict[str, Any]):
 
     return {"message": "Session saved successfully", "data": data}
 
+
 @router.websocket("/ws/{equipment_id}")
 async def websocket_endpoint(websocket: WebSocket, equipment_id: str):
     await websocket.accept()
@@ -69,10 +84,14 @@ async def websocket_endpoint(websocket: WebSocket, equipment_id: str):
         async for _ in websocket.iter_text():
             pass
     except WebSocketDisconnect:
-        if equipment_id in active_connections and websocket in active_connections[equipment_id]:
+        if (
+            equipment_id in active_connections
+            and websocket in active_connections[equipment_id]
+        ):
             active_connections[equipment_id].discard(websocket)
             if not active_connections[equipment_id]:  # Cleanup empty connection lists
                 del active_connections[equipment_id]
+
 
 async def broadcast_ws(data: Dict[str, Any]):
     equipment_id = str(data["equipment_id"])
@@ -83,7 +102,12 @@ async def broadcast_ws(data: Dict[str, Any]):
         "cadence": data["cadence"],
         "heart_rate": data["heart_rate"],
         "caloric_burn": data["caloric_burn"],
-        "timestamp": data["timestamp"]
+        "timestamp": data["timestamp"],
     }
     if equipment_id in active_connections:
-        await asyncio.gather(*[websocket.send_json(message) for websocket in active_connections[equipment_id]])
+        await asyncio.gather(
+            *[
+                websocket.send_json(message)
+                for websocket in active_connections[equipment_id]
+            ]
+        )

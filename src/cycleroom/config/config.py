@@ -12,6 +12,7 @@ print(f"INFLUXDB_TOKEN: {os.getenv('INFLUXDB_TOKEN')}")
 print(f"INFLUXDB_ORG: {os.getenv('INFLUXDB_ORG')}")
 print(f"INFLUXDB_BUCKET: {os.getenv('INFLUXDB_BUCKET')}")
 
+
 class Config:
     # InfluxDB Configuration
     INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://localhost:8086")
@@ -30,6 +31,7 @@ class Config:
     WAYPOINTS_FILE = os.getenv("WAYPOINTS_FILE", "assets/waypoints.json")
     BIKE_ICON_PATH = os.getenv("BIKE_ICON_PATH", "assets/bike_icon.png")
     TRACK_IMAGE_PATH = os.getenv("TRACK_IMAGE_PATH", "assets/track.jpg")
+
 
 # Debug: Print Config class variables
 print(f"Config.INFLUXDB_URL: {Config.INFLUXDB_URL}")

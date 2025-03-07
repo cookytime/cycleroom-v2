@@ -11,6 +11,7 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class Broadcast:
     def __init__(self):
         self.IsValid = False
@@ -127,7 +128,9 @@ def send_parsed_data_to_api(parsed_data, server_url):
     if response.status_code == 200:
         logger.info(f"✅ Successfully sent data for UUID {parsed_data.UUID}")
     else:
-        logger.error(f"❌ Failed to send data for UUID {parsed_data.UUID}: {response.text}")
+        logger.error(
+            f"❌ Failed to send data for UUID {parsed_data.UUID}: {response.text}"
+        )
 
 
 def process_csv_file(csv_file, server_url):
@@ -171,9 +174,18 @@ def process_csv_file(csv_file, server_url):
 
 if __name__ == "__main__":
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Process and send Bluetooth data from CSV file.")
-    parser.add_argument("--csv-file", type=str, required=True, help="Path to the CSV file")
-    parser.add_argument("--server-url", type=str, default="http://127.0.0.1:8000/sessions", help="Server URL to send data to")
+    parser = argparse.ArgumentParser(
+        description="Process and send Bluetooth data from CSV file."
+    )
+    parser.add_argument(
+        "--csv-file", type=str, required=True, help="Path to the CSV file"
+    )
+    parser.add_argument(
+        "--server-url",
+        type=str,
+        default="http://127.0.0.1:8000/sessions",
+        help="Server URL to send data to",
+    )
     args = parser.parse_args()
 
     # Process the CSV file and send data to the API
