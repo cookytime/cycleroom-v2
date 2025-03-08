@@ -1,65 +1,90 @@
 import asyncio
 import logging
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
 from bleak import BleakScanner
-from backend.keiser_m3_ble_parser import KeiserM3BLEBroadcast
+import httpx
+import os
+from fastapi import FastAPI
 
-TARGET_PREFIX = "M3"
+app = FastAPI()
 
+# FastAPI Endpoint to Send Parsed Data
+FASTAPI_URL = os.getenv("FASTAPI_URL", "http://fastapi-app:8000/api/bikes")
+
+# Logger Configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+
+# Target Device Prefix
+TARGET_PREFIX = os.getenv("TARGET_PREFIX", "M3")
+
+# Optimization 1: Use a set to store unique device addresses
+found_bikes = set()
 
 
-async def scan_keiser_bikes(scan_duration=10):
-    # (Same scanning code as before)
-    found_bikes = {}
-
-    def detection_callback(device, advertisement_data):
-        if device.name and device.name.startswith(TARGET_PREFIX):
-            try:
-                parsed_data = KeiserM3BLEBroadcast(
-                    advertisement_data.manufacturer_data[0x0645]
-                ).to_dict()
-                if parsed_data:
-                    found_bikes[device.address] = parsed_data
+# Optimization 2: Use a coroutine for the detection callback
+async def detection_callback(device, advertisement_data):
+    if device.name and device.name.startswith(TARGET_PREFIX):
+        try:
+            manufacturer_data = advertisement_data.manufacturer_data.get(0x0645)
+            if manufacturer_data:
+                parsed_data = {
+                    "device_name": device.name,
+                    "device_address": device.address,
+                }
+                if device.address not in found_bikes:
+                    found_bikes.add(device.address)
                     logger.info(
                         f"✅ Found Keiser Bike {device.name} ({device.address}) → {parsed_data}"
                     )
-            except KeyError as e:
-                logger.info(f"⚠️ Error parsing BLE data from {device.name}: {e}")
+                    await send_data_to_fastapi(parsed_data)
+        except KeyError as e:
+            logger.warning(f"⚠️ Error parsing BLE data from {device.name}: {e}")
 
+
+# Optimization 3: Use a coroutine for the scanning loop
+async def scan_keiser_bikes(scan_duration=10):
     scanner = BleakScanner(detection_callback)
     logger.info("🔍 Starting BLE scan...")
     await scanner.start()
     await asyncio.sleep(scan_duration)
     await scanner.stop()
     logger.info(f"🔍 Scan complete. Found {len(found_bikes)} bikes.")
-    return found_bikes
 
 
-# Define a continuous scanner that repeatedly scans
-async def continuous_ble_scanner():
+# Optimization 4: Use a coroutine for sending data to FastAPI
+async def send_data_to_fastapi(data):
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(FASTAPI_URL, json=data)
+            if response.status_code == 200:
+                logger.info("✅ Successfully sent BLE data to FastAPI.")
+            else:
+                logger.error(
+                    f"❌ Failed to send BLE data. Status Code: {response.status_code}"
+                )
+        except httpx.RequestError as e:
+            logger.error(f"❌ Error sending data to FastAPI: {e}")
+
+
+# Optimization 5: Use a coroutine for the main loop
+async def main():
     while True:
         await scan_keiser_bikes()
-        await asyncio.sleep(5)  # wait 5 seconds before next scan
+        await asyncio.sleep(5)  # Scan every 5 seconds
+
+
+from contextlib import asynccontextmanager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logging.info("🚀 Starting FastAPI application")
-    scanner_task = asyncio.create_task(continuous_ble_scanner())
+    asyncio.create_task(main())
     yield
-    scanner_task.cancel()
-    try:
-        await scanner_task
-    except asyncio.CancelledError:
-        logging.info("🚦 BLE scanner task cancelled cleanly.")
+    # Add any cleanup code here if needed
 
 
 app = FastAPI(lifespan=lifespan)
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("ble_listener:app", host="127.0.0.1", port=8002, reload=True)

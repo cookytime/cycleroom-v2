@@ -5,7 +5,9 @@ import json
 import logging
 import argparse
 import time
+import os
 from datetime import datetime
+from multiprocessing import Process
 
 # Configure logger
 logging.basicConfig(level=logging.INFO)
@@ -172,13 +174,37 @@ def process_csv_file(csv_file, server_url):
             send_parsed_data_to_api(parsed_data, server_url)
 
 
+def find_csv_files(directory):
+    """Find all CSV files in the given directory"""
+    return [
+        os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(".csv")
+    ]
+
+
+def process_files_in_directory(directory, server_url):
+    """Process all CSV files in the directory"""
+    csv_files = find_csv_files(directory)
+    processes = []
+
+    for csv_file in csv_files:
+        p = Process(target=process_csv_file, args=(csv_file, server_url))
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
+
+
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
-        description="Process and send Bluetooth data from CSV file."
+        description="Process and send Bluetooth data from CSV files in a directory."
     )
     parser.add_argument(
-        "--csv-file", type=str, required=True, help="Path to the CSV file"
+        "--directory",
+        type=str,
+        required=True,
+        help="Path to the directory containing CSV files",
     )
     parser.add_argument(
         "--server-url",
@@ -188,5 +214,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Process the CSV file and send data to the API
-    process_csv_file(args.csv_file, args.server_url)
+    # Process the CSV files in the directory and send data to the API
+    process_files_in_directory(args.directory, args.server_url)

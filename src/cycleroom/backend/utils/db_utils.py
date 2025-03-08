@@ -18,12 +18,6 @@ INFLUXDB_ORG = os.getenv("INFLUXDB_ORG")
 # Ensure the environment variables are loaded
 INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET")
 
-# Debug: Print environment variables
-print(f"INFLUXDB_URL: {INFLUXDB_URL}")
-print(f"INFLUXDB_TOKEN: {INFLUXDB_TOKEN}")
-print(f"INFLUXDB_ORG: {INFLUXDB_ORG}")
-print(f"INFLUXDB_BUCKET: {INFLUXDB_BUCKET}")
-
 # Initialize InfluxDB Client
 client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)
 query_api = client.query_api()
