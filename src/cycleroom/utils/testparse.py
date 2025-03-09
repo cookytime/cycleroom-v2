@@ -6,7 +6,7 @@ import logging
 import argparse
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from multiprocessing import Process
 
 # Configure logger
@@ -114,8 +114,8 @@ def hex_string_to_byte_array(hex_string):
 def send_parsed_data_to_api(parsed_data, server_url):
     """Send parsed data to the API"""
     data = {
-        "equipment_id": parsed_data.UUID,
-        "timestamp": datetime.utcnow().isoformat(),  # Add a timestamp
+        "equipment_id": parsed_data.ID,
+        "timestamp": datetime.now(timezone.utc).isoformat(),  # Add a timestamp
         "power": parsed_data.Power,
         "cadence": parsed_data.Cadence,
         "heart_rate": parsed_data.HeartRate,
@@ -128,7 +128,7 @@ def send_parsed_data_to_api(parsed_data, server_url):
 
     response = requests.post(server_url, json=data)
     if response.status_code == 200:
-        logger.info(f"✅ Successfully sent data for UUID {parsed_data.UUID}")
+        logger.info(f"✅ Successfully sent data for UUID {parsed_data.ID}")
     else:
         logger.error(
             f"❌ Failed to send data for UUID {parsed_data.UUID}: {response.text}"
@@ -161,7 +161,7 @@ def process_csv_file(csv_file, server_url):
             parsed_data = parse(address, advertising_data, rssi)
 
             print(
-                f"Parsed Data -> UUID: {parsed_data.UUID}, Power: {parsed_data.Power}, Cadence: {parsed_data.Cadence}, Valid: {parsed_data.IsValid}"
+                f"Parsed Data -> UUID: {parsed_data.ID}, Power: {parsed_data.Power}, Cadence: {parsed_data.Cadence}, Valid: {parsed_data.IsValid}"
             )
 
             # Calculate delay based on seconds_elapsed

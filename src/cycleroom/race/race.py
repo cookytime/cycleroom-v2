@@ -4,20 +4,65 @@ import json
 import numpy as np
 import asyncio
 import httpx
+import logging
 from datetime import datetime
-from config.config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    TRACK_WIDTH,
-    TRACK_LENGTH_MILES,
-    WAYPOINTS_FILE,
-    BIKE_ICON_PATH,
-    TRACK_IMAGE_PATH,
+from fastapi import FastAPI
+from config.config import Config  # Import the Config class
+import uvicorn
+import multiprocessing
+import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Logger Configuration
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
+logger = logging.getLogger(__name__)
+
+# Debug: Print InfluxDB variables
+influx_vars = ["INFLUXDB_URL", "INFLUXDB_TOKEN", "INFLUXDB_ORG", "INFLUXDB_BUCKET"]
+for var in influx_vars:
+    logger.info(f"{var}: {getattr(Config, var, 'Not Set')}")
+
+def set_env_variables():
+    """Set environment variables from Config class."""
+    os.environ["INFLUXDB_URL"] = Config.INFLUXDB_URL
+    os.environ["INFLUXDB_TOKEN"] = Config.INFLUXDB_TOKEN
+    os.environ["INFLUXDB_ORG"] = Config.INFLUXDB_ORG
+    os.environ["INFLUXDB_BUCKET"] = Config.INFLUXDB_BUCKET
+    os.environ["QUERY_INTERVAL"] = str(Config.QUERY_INTERVAL)
+    os.environ["SCREEN_WIDTH"] = str(Config.SCREEN_WIDTH)
+    os.environ["SCREEN_HEIGHT"] = str(Config.SCREEN_HEIGHT)
+    os.environ["TRACK_WIDTH"] = str(Config.TRACK_WIDTH)
+    os.environ["TRACK_LENGTH_MILES"] = str(Config.TRACK_LENGTH_MILES)
+    os.environ["WAYPOINTS_FILE"] = Config.WAYPOINTS_FILE
+    os.environ["BIKE_ICON_PATH"] = Config.BIKE_ICON_PATH
+    os.environ["TRACK_IMAGE_PATH"] = Config.TRACK_IMAGE_PATH
+
+def start_server():
+    """Starts the FastAPI server."""
+    logger.info("🚀 Starting Cycleroom FastAPI server...")
+    uvicorn.run("backend.server:app", host="0.0.0.0", port=8000, reload=False)
+
+def start_race():
+    """Starts the Race Dashboard."""
+    logger.info("🚀🚦 Starting the Race Dashboard")
+    uvicorn.run("race.race:app", host="0.0.0.0", port=8001, reload=False)
+
+def start_blescanner():
+    """Starts the BLE Scanner."""
+    logger.info("🚀🚦 Starting the BLE Scanner")
+    uvicorn.run("backend.ble_listener:app", host="0.0.0.0", port=8002, reload=False)
+
+# Initialize FastAPI app
+app = FastAPI()
 
 # Initialize Pygame
 pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT))
 pygame.display.set_caption("Real-Time Bike Race Visualization")
 clock = pygame.time.Clock()
 
@@ -45,7 +90,7 @@ def load_assets():
     global WAYPOINTS, BIKE_ICON, TRACK_IMAGE
     # Load Waypoints
     try:
-        with open(WAYPOINTS_FILE, "r") as f:
+        with open(Config.WAYPOINTS_FILE, "r") as f:
             WAYPOINTS = [(x, y) for x, y in json.load(f)]
         print(f"✅ Loaded {len(WAYPOINTS)} waypoints.")
     except (FileNotFoundError, json.JSONDecodeError) as e:
@@ -54,7 +99,7 @@ def load_assets():
 
     # Load Bike Icon
     try:
-        BIKE_ICON = pygame.image.load(BIKE_ICON_PATH)
+        BIKE_ICON = pygame.image.load(Config.BIKE_ICON_PATH)
         BIKE_ICON = pygame.transform.scale(BIKE_ICON, (20, 10))
     except pygame.error as e:
         print(f"❌ Error loading bike icon: {e}")
@@ -62,8 +107,8 @@ def load_assets():
 
     # Load Track Image
     try:
-        TRACK_IMAGE = pygame.image.load(TRACK_IMAGE_PATH)
-        TRACK_IMAGE = pygame.transform.scale(TRACK_IMAGE, (TRACK_WIDTH, SCREEN_HEIGHT))
+        TRACK_IMAGE = pygame.image.load(Config.TRACK_IMAGE_PATH)
+        TRACK_IMAGE = pygame.transform.scale(TRACK_IMAGE, (Config.TRACK_WIDTH, Config.SCREEN_HEIGHT))
     except pygame.error as e:
         print(f"❌ Error loading track image: {e}")
         TRACK_IMAGE = None
@@ -81,9 +126,9 @@ def get_bike_position(distance_miles, bike_id):
     if not WAYPOINTS:
         return (0, 0)
 
-    distance_pixels = (distance_miles / TRACK_LENGTH_MILES) * len(WAYPOINTS)
+    distance_pixels = (distance_miles / Config.TRACK_LENGTH_MILES) * len(WAYPOINTS)
     index = int(distance_pixels) % len(WAYPOINTS)
-    next_index = (index + 1) % len(WAYPOINTS)
+    next_index = (index + 1) % len(WAYPOINTS
 
     start_pos = WAYPOINTS[index]
     end_pos = WAYPOINTS[next_index]
@@ -142,7 +187,7 @@ def draw_leaderboard():
     sorted_bikes = sorted(
         bike_data.items(), key=lambda x: x[1]["trip_distance"], reverse=True
     )
-    leaderboard_pos = (TRACK_WIDTH + 50, 50)
+    leaderboard_pos = (Config.TRACK_WIDTH + 50, 50)
     y_offset = 0
 
     title_surface = font.render("Leaderboard", True, (255, 255, 255))
@@ -194,4 +239,25 @@ async def main_loop():
 
 
 if __name__ == "__main__":
-    asyncio.run(main_loop())
+    set_env_variables()
+    sys.path.append("/home/glen/cycleroom-v2/src")  # Add this line to set PYTHONPATH
+
+    multiprocessing.set_start_method("spawn")
+
+    server_process = multiprocessing.Process(target=start_server)
+    race_process = multiprocessing.Process(target=start_race)
+    blescanner_process = multiprocessing.Process(target=start_blescanner)
+
+    server_process.start()
+    race_process.start()
+    blescanner_process.start()
+
+    try:
+        server_process.join()
+        race_process.join()
+        blescanner_process.join()
+    except KeyboardInterrupt:
+        logger.info("Shutting down processes...")
+        server_process.terminate()
+        race_process.terminate()
+        blescanner_process.terminate()

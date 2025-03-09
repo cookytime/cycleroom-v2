@@ -1,17 +1,17 @@
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
-from backend.utils.db_utils import get_latest_bike_data
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 from influxdb_client import Point, InfluxDBClient
 from datetime import datetime, timezone
+from backend.routes.bike_websocket import broadcast_ws
 import os
 import logging
 
 router = APIRouter()
+# Logger Configuration
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
-
-# ✅ WebSocket connections storage
-active_connections: Dict[str, set] = {}
 
 # Initialize InfluxDB client and write API using environment variables
 INFLUXDB_URL = os.getenv("INFLUXDB_URL")
@@ -41,12 +41,12 @@ async def create_session(data: Dict[str, Any]):
         raise HTTPException(status_code=400, detail="Missing required fields")
 
     try:
-        # ✅ Convert timestamp from JSON input
+        # Convert timestamp from JSON input
         timestamp = datetime.fromisoformat(data["timestamp"]).replace(
             tzinfo=timezone.utc
         )
 
-        # ✅ Create InfluxDB data point
+        # Create InfluxDB data point
         point = (
             Point("keiser_m3")
             .tag("equipment_id", str(data["equipment_id"]))
@@ -61,53 +61,19 @@ async def create_session(data: Dict[str, Any]):
             .time(timestamp)
         )
 
-        # ✅ Write to InfluxDB
+        # Write to InfluxDB
         write_api.write(bucket=INFLUXDB_BUCKET, org=INFLUXDB_ORG, record=point)
-
-        # ✅ Broadcast new data to WebSocket clients
-        await broadcast_ws(data)
-
+        logger.info(f"✅ Data written to InfluxDB for equipment_id: {data['equipment_id']}")
     except Exception as e:
         logger.error(f"🔥 Error Writing to InfluxDB: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-    return {"message": "Session saved successfully", "data": data}
+    # Write data to websocket
+    logger.info(f"Broadcasting data to WebSocket clients: {data}")
+    await broadcast_ws(data)
+    return {"message": "Session saved and sent successfully", "data": data}
 
 
-@router.websocket("/ws/{equipment_id}")
-async def websocket_endpoint(websocket: WebSocket, equipment_id: str):
-    await websocket.accept()
-    if equipment_id not in active_connections:
-        active_connections[equipment_id] = set()
-    active_connections[equipment_id].add(websocket)
-    try:
-        async for _ in websocket.iter_text():
-            pass
-    except WebSocketDisconnect:
-        if (
-            equipment_id in active_connections
-            and websocket in active_connections[equipment_id]
-        ):
-            active_connections[equipment_id].discard(websocket)
-            if not active_connections[equipment_id]:  # Cleanup empty connection lists
-                del active_connections[equipment_id]
 
 
-async def broadcast_ws(data: Dict[str, Any]):
-    equipment_id = str(data["equipment_id"])
-    message = {
-        "power": data["power"],
-        "gear": data["gear"],
-        "distance": data["distance"],
-        "cadence": data["cadence"],
-        "heart_rate": data["heart_rate"],
-        "caloric_burn": data["caloric_burn"],
-        "timestamp": data["timestamp"],
-    }
-    if equipment_id in active_connections:
-        await asyncio.gather(
-            *[
-                websocket.send_json(message)
-                for websocket in active_connections[equipment_id]
-            ]
-        )
+

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from backend.routes.bike_data import router as bike_data_router
 from backend.routes.historical_data import router as historical_data_router
+from backend.routes.bike_websocket import router as bike_websocket_router
 import logging
 from backend.routes.session_data import router as session_router
 
@@ -21,6 +22,7 @@ app = FastAPI(
 app.include_router(bike_data_router)
 app.include_router(historical_data_router)
 app.include_router(session_router)
+app.include_router(bike_websocket_router)
 
 
 @app.get("/", tags=["Root"])
