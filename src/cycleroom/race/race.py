@@ -128,7 +128,7 @@ def get_bike_position(distance_miles, bike_id):
 
     distance_pixels = (distance_miles / Config.TRACK_LENGTH_MILES) * len(WAYPOINTS)
     index = int(distance_pixels) % len(WAYPOINTS)
-    next_index = (index + 1) % len(WAYPOINTS
+    next_index = (index + 1) % len(WAYPOINTS)
 
     start_pos = WAYPOINTS[index]
     end_pos = WAYPOINTS[next_index]

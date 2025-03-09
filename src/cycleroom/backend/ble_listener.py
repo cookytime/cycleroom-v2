@@ -8,7 +8,7 @@ from fastapi import FastAPI
 app = FastAPI()
 
 # FastAPI Endpoint to Send Parsed Data
-FASTAPI_URL = os.getenv("FASTAPI_URL", "http://fastapi-app:8000/api/bikes")
+FASTAPI_URL = os.getenv("FASTAPI_URL", "http://192.168.1.211/api/bikes")
 
 # Logger Configuration
 logging.basicConfig(
@@ -93,3 +93,21 @@ async def lifespan(app: FastAPI):
     # Add any cleanup code here if needed
 
 app = FastAPI(lifespan=lifespan)
+
+# Check for BLE permissions
+def check_ble_permissions():
+    if os.name == 'posix':
+        import subprocess
+        result = subprocess.run(['getcap', '/usr/bin/python3'], capture_output=True, text=True)
+        if 'cap_net_raw+eip' not in result.stdout:
+            logger.warning("BLE permissions are not set. Run the following command to set permissions:")
+            logger.warning("sudo setcap 'cap_net_raw+eip' $(readlink -f $(which python3))")
+            return False
+    return True
+
+if __name__ == "__main__":
+    if check_ble_permissions():
+        import uvicorn
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+    else:
+        logger.error("BLE permissions are not set. Exiting...")
