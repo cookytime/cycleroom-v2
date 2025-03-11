@@ -1,6 +1,6 @@
 
 # Use the full Python base image with all development headers
-FROM python:3.10
+FROM python:3.13
 
 # Set the working directory
 WORKDIR /app
