@@ -69,7 +69,7 @@ class KeiserM3BLEBroadcast:
         )
 
         # Convert tripDistance to miles/km
-        self.trip_distance = (
+        self.trip_miles = (
             ((temp_distance & 32767) * 0.62137119) / 10.0
             if temp_distance & 32768
             else temp_distance / 10.0
@@ -93,6 +93,6 @@ class KeiserM3BLEBroadcast:
             "power": self.power,
             "caloric_burn": self.caloric_burn,
             "duration": self.duration,
-            "trip_distance": self.trip_distance,
+            "trip_miles": self.trip_miles,
             "gear": self.gear,
         }

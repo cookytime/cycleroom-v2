@@ -13,7 +13,7 @@ class HistoricalDataItem(BaseModel):
     cadence: int
     heart_rate: int
     power: int
-    trip_distance: float
+    trip_miles: float
     gear: int
     timestamp: datetime
 

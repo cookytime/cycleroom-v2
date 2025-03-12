@@ -40,8 +40,8 @@ async def save_bike_mapping(bike_number: str, device_address: str) -> bool:
     try:
         conn = await get_timescale_connection()
         query = """
-            INSERT INTO bike_mappings (bike_number, device_address, mapped_at)NTO bike_mappings (bike_number, device_address, mapped_at)
-            VALUES ($1, $2, NOW())            VALUES ($1, $2, NOW())
+            INSERT INTO bike_mappings (bike_number, device_address, mapped_at)
+            VALUES ($1, $2, NOW())
         """
         await conn.execute(query, bike_number, device_address)
         await conn.close()
@@ -59,7 +59,7 @@ async def get_bike_mappings() -> list:
     try:
         conn = await get_timescale_connection()
         query = """
-            SELECT bike_number, device_address FROM bike_mappingsber, device_address FROM bike_mappings
+            SELECT bike_number, device_address FROM bike_mappings
         """
         rows = await conn.fetch(query)
         await conn.close()
@@ -69,21 +69,41 @@ async def get_bike_mappings() -> list:
         return []
 
 
-# Get Latest Bike Data from InfluxDBInfluxDB
+# Get Latest Bike Data from InfluxDB
 def get_latest_bike_data():
     try:
         query = f"""
-            from(bucket: "{INFLUXDB_BUCKET}")
-            |> range(start: -5m): -5m)
-            |> filter(fn: (r) => r._measurement == "bike_data")=> r._measurement == "bike_data")
-            |> last()
+            from(bucket: "keiser_data")
+                |> range(start: -45m)
+                |> filter(fn: (r) => r._measurement == "m3i_broadcast")
+                |> filter(fn: (r) =>
+                    r._field == "cadence_rpm" or
+                    r._field == "power_watts" or
+                    r._field == "trip_miles" or
+                    r._field == "gear" or
+                    r._field == "time_seconds"
+                )
+                |> group(columns: ["bike_id", "_field"])
+                |> last()
+                |> pivot(rowKey: ["bike_id"], columnKey: ["_field"], valueColumn: "_value")
+                |> yield(name: "per_bike_data")
         """
         result = query_api.query(org=INFLUXDB_ORG, query=query)
         latest_data = {}
         for table in result:
             for record in table.records:
-                bike_id = record.values["bike_id"]
-                latest_data[bike_id] = {"distance": record.get_value()}
+                logger.info(f"Record values: {record.values}")
+                bike_id = record.values.get("bike_id")
+                if bike_id:
+                    latest_data[bike_id] = {
+                        "cadence_rpm": record.values.get("cadence_rpm", 0),
+                        "gear": record.values.get("gear", 0),
+                        "power_watts": record.values.get("power_watts", 0),
+                        "time_seconds": record.values.get("time_seconds", 0),
+                        "trip_miles": record.values.get("trip_miles", 0),
+                    }
+                else:
+                    logger.error("bike_id not found in record.values")
         logger.info("✅ Successfully fetched latest bike data from InfluxDB.")
         return latest_data
     except InfluxDBError as e:
