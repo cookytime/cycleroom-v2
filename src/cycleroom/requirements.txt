@@ -3,7 +3,7 @@ bleak==0.22.3
 fastapi==0.115.11
 httpx==0.28.1
 influxdb_client==1.48.0
-numpy==2.2.3
+numpy==2.2.4
 pandas==2.2.3
 pydantic==2.10.6
 pygame==2.6.1
