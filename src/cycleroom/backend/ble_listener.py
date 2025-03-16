@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import subprocess
+import sys
 from bleak import BleakScanner
 import httpx
 import os
@@ -12,7 +14,7 @@ FASTAPI_URL = os.getenv("FASTAPI_URL", "http://192.168.1.211/api/bikes")
 
 # Logger Configuration
 logging.basicConfig(
-    level=logging.DEBUG,  # Set to DEBUG to capture detailed logs
+    level=logging.INFO,  # Set to DEBUG to capture detailed logs
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
@@ -95,14 +97,35 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Check for BLE permissions
+
 def check_ble_permissions():
     if os.name == 'posix':
-        import subprocess
-        result = subprocess.run(['getcap', '/usr/bin/python3'], capture_output=True, text=True)
-        if 'cap_net_raw+eip' not in result.stdout:
-            logger.warning("BLE permissions are not set. Run the following command to set permissions:")
-            logger.warning("sudo setcap 'cap_net_raw+eip' $(readlink -f $(which python3))")
+        try:
+            # Get the path to the Python binary in the virtual environment
+            python_binary = sys.executable  # This gives you the path of the Python binary in use
+            logger.debug(f"Python binary found at: /bin/python3.13 ")
+
+            # Run getcap to check if it has BLE capabilities
+            result = subprocess.run(['getcap', '/bin/python3.13'], capture_output=True, text=True, check=True)
+            logger.debug(f"getcap result: {result.stdout.strip()}")  # Stripping any extra newlines
+
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error running getcap: {e}")
             return False
+        except FileNotFoundError:
+            logger.error("'getcap' command is not found. Please install 'libcap2-bin' to check capabilities.")
+            return False
+
+        # Check if the capability is set
+        if 'cap_net_raw=eip' not in result.stdout.strip():
+            logger.warning("BLE permissions are not set. Run the following command to set permissions:")
+            logger.warning(f"sudo setcap 'cap_net_raw+eip' {python_binary}")
+            return False
+
+    else:
+        logger.debug("Non-POSIX system, skipping BLE permissions check.")
+        return False  # Not a POSIX system, BLE permissions are not relevant
+
     return True
 
 if __name__ == "__main__":

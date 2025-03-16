@@ -1,0 +1,6 @@
+fastapi
+bleak
+httpx
+uvicorn
+python-dotenv
+logging
